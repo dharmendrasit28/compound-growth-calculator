@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compound Growth Calculator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #f7971e, #ffd200, #21d397);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 1px;
+    }
+
+    .header p {
+      color: #a0aec0;
+      margin-top: 6px;
+      font-size: 1rem;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 36px;
+      backdrop-filter: blur(12px);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1.7rem; }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #90cdf4;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .prefix {
+      position: absolute;
+      left: 14px;
+      color: #ffd200;
+      font-weight: 700;
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    .suffix {
+      position: absolute;
+      right: 14px;
+      color: #ffd200;
+      font-weight: 700;
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+    }
+
+    input[type="number"].with-prefix { padding-left: 38px; }
+    input[type="number"].with-suffix { padding-right: 38px; }
+
+    input[type="number"]:focus, select:focus {
+      border-color: #ffd200;
+      box-shadow: 0 0 0 3px rgba(255, 210, 0, 0.15);
+    }
+
+    select option { background: #302b63; color: #fff; }
+
+    .btn {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      background: linear-gradient(90deg, #f7971e, #ffd200);
+      color: #1a1a2e;
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-transform: uppercase;
+    }
+
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,210,0,0.35); }
+    .btn:active { transform: translateY(0); }
+
+    /* Results */
+    .results {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .results.show { display: block; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 620px) { .summary-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      border-radius: 14px;
+      padding: 20px 18px;
+      text-align: center;
+    }
+
+    .stat-card.green  { background: linear-gradient(135deg, #11998e, #38ef7d); }
+    .stat-card.orange { background: linear-gradient(135deg, #f7971e, #ffd200); }
+    .stat-card.purple { background: linear-gradient(135deg, #7f00ff, #e100ff); }
+
+    .stat-card .stat-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: rgba(0,0,0,0.6);
+      margin-bottom: 6px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      word-break: break-all;
+    }
+
+    .stat-card .stat-sub {
+      font-size: 0.78rem;
+      color: rgba(0,0,0,0.55);
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .breakdown {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .breakdown h3 {
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .bar-row { margin-bottom: 12px; }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 0.82rem;
+      color: #a0aec0;
+    }
+
+    .bar-track {
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.8s ease;
+    }
+
+    .bar-fill.principal { background: linear-gradient(90deg, #667eea, #764ba2); }
+    .bar-fill.contrib   { background: linear-gradient(90deg, #f7971e, #ffd200); }
+    .bar-fill.interest  { background: linear-gradient(90deg, #11998e, #38ef7d); }
+
+    /* Table */
+    .table-wrap {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .table-title {
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.06);
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .table-scroll { overflow-x: auto; max-height: 340px; overflow-y: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      padding: 11px 14px;
+      background: rgba(48, 43, 99, 0.95);
+      color: #ffd200;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    thead th:first-child { text-align: center; }
+
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover { background: rgba(255,255,255,0.05); }
+
+    tbody td {
+      padding: 10px 14px;
+      color: #e2e8f0;
+      text-align: right;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    tbody td:first-child { text-align: center; color: #90cdf4; font-weight: 600; }
+
+    .interest-cell { color: #68d391; font-weight: 600; }
+    .total-cell    { color: #fbd38d; font-weight: 700; }
+
+    /* scrollbar */
+    .table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+    .table-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>&#x1F4C8; Compound Growth Calculator</h1>
+    <p>Calculate how your investments grow with compounding interest &amp; regular contributions</p>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+
+      <!-- Initial Amount -->
+      <div class="field">
+        <label>Initial Investment</label>
+        <div class="input-wrap">
+          <span class="prefix">&#x20B9;</span>
+          <input type="number" id="principal" class="with-prefix" value="1000000" min="0" step="1000" placeholder="e.g. 1000000" />
+        </div>
+      </div>
+
+      <!-- Annual Interest Rate -->
+      <div class="field">
+        <label>Annual Interest Rate</label>
+        <div class="input-wrap">
+          <input type="number" id="rate" class="with-suffix" value="12" min="0" max="100" step="0.1" placeholder="e.g. 12" />
+          <span class="suffix">%</span>
+        </div>
+      </div>
+
+      <!-- Contribution Amount -->
+      <div class="field">
+        <label>Regular Contribution Amount</label>
+        <div class="input-wrap">
+          <span class="prefix">&#x20B9;</span>
+          <input type="number" id="contribution" class="with-prefix" value="10000" min="0" step="500" placeholder="e.g. 10000" />
+        </div>
+      </div>
+
+      <!-- Contribution Frequency -->
+      <div class="field">
+        <label>Contribution Frequency</label>
+        <div class="input-wrap">
+          <select id="contribFreq">
+            <option value="12">Monthly</option>
+            <option value="4">Quarterly (every 3 months)</option>
+            <option value="2">Semi-Annually (every 6 months)</option>
+            <option value="1">Annually (yearly)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Compounding Period -->
+      <div class="field">
+        <label>Compounding Period</label>
+        <div class="input-wrap">
+          <select id="compoundFreq">
+            <option value="12">Monthly</option>
+            <option value="4">Quarterly</option>
+            <option value="2">Semi-Annually</option>
+            <option value="1" selected>Annually</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Time Period -->
+      <div class="field">
+        <label>Time Period</label>
+        <div class="input-wrap">
+          <input type="number" id="years" class="with-suffix" value="20" min="1" max="60" step="1" placeholder="e.g. 20" />
+          <span class="suffix">Yrs</span>
+        </div>
+      </div>
+
+      <button class="btn" onclick="calculate()">&#x25B6; Calculate</button>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+
+      <div class="summary-grid">
+        <div class="stat-card green">
+          <div class="stat-label">&#x1F3C6; Total Value</div>
+          <div class="stat-value" id="res-total">-</div>
+          <div class="stat-sub">Final corpus</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">&#x1F4B0; Total Invested</div>
+          <div class="stat-value" id="res-invested">-</div>
+          <div class="stat-sub">Principal + Contributions</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">&#x2728; Interest Earned</div>
+          <div class="stat-value" id="res-interest">-</div>
+          <div class="stat-sub">Pure compounding gain</div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <h3>Portfolio Breakdown</h3>
+        <div class="bar-row">
+          <div class="bar-label"><span>&#x1F535; Initial Principal</span><span id="pct-principal">0%</span></div>
+          <div class="bar-track"><div class="bar-fill principal" id="bar-principal" style="width:0%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>&#x1F7E1; Total Contributions</span><span id="pct-contrib">0%</span></div>
+          <div class="bar-track"><div class="bar-fill contrib" id="bar-contrib" style="width:0%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>&#x1F7E2; Interest Earned</span><span id="pct-interest">0%</span></div>
+          <div class="bar-track"><div class="bar-fill interest" id="bar-interest" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-title">&#x1F4C5; Year-by-Year Growth</div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Opening Balance</th>
+                <th>Contributions Added</th>
+                <th>Interest Earned</th>
+                <th>Closing Balance</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function fmt(n) {
+    if (n >= 1e7) return '&#x20B9;' + (n / 1e7).toFixed(2) + ' Cr';
+    if (n >= 1e5) return '&#x20B9;' + (n / 1e5).toFixed(2) + ' L';
+    return '&#x20B9;' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function fmtFull(n) {
+    return '&#x20B9;' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function calculate() {
+    const P        = parseFloat(document.getElementById('principal').value)    || 0;
+    const annRate  = parseFloat(document.getElementById('rate').value)         || 0;
+    const contrib  = parseFloat(document.getElementById('contribution').value) || 0;
+    const cf       = parseInt(document.getElementById('contribFreq').value);   // contributions per year
+    const n        = parseInt(document.getElementById('compoundFreq').value);  // compounds per year
+    const years    = parseInt(document.getElementById('years').value)          || 1;
+
+    // Per-period rate
+    const r = annRate / 100 / n;
+
+    let balance = P;
+    let totalContributions = 0;
+    const rows = [];
+
+    for (let yr = 1; yr <= years; yr++) {
+      const openBal = balance;
+      let yearContrib = 0;
+      let yearInterest = 0;
+
+      // Simulate each compounding sub-period within the year
+      for (let period = 1; period <= n; period++) {
+        // Add contribution if it falls in this period
+        // Determine contribution timing: cf contributions per year spread over n periods
+        const contribThisPeriod = Math.round((cf / n) * contrib * 100) / 100;
+        balance += contribThisPeriod;
+        yearContrib += contribThisPeriod;
+
+        // Apply compounding
+        const interest = balance * r;
+        balance += interest;
+        yearInterest += interest;
+      }
+
+      totalContributions += yearContrib;
+      rows.push({
+        yr,
+        openBal,
+        contrib: yearContrib,
+        interest: yearInterest,
+        closeBal: balance
+      });
+    }
+
+    const totalInvested = P + totalContributions;
+    const interestEarned = balance - totalInvested;
+
+    // Update summary cards
+    document.getElementById('res-total').innerHTML    = fmt(balance);
+    document.getElementById('res-invested').innerHTML = fmt(totalInvested);
+    document.getElementById('res-interest').innerHTML = fmt(interestEarned);
+
+    // Update bars
+    const pP = (P / balance * 100).toFixed(1);
+    const pC = (totalContributions / balance * 100).toFixed(1);
+    const pI = (interestEarned / balance * 100).toFixed(1);
+
+    document.getElementById('pct-principal').textContent  = pP + '%';
+    document.getElementById('pct-contrib').textContent    = pC + '%';
+    document.getElementById('pct-interest').textContent   = pI + '%';
+
+    setTimeout(() => {
+      document.getElementById('bar-principal').style.width = pP + '%';
+      document.getElementById('bar-contrib').style.width   = pC + '%';
+      document.getElementById('bar-interest').style.width  = pI + '%';
+    }, 50);
+
+    // Build table
+    let html = '';
+    rows.forEach(row => {
+      html += `<tr>
+        <td>${row.yr}</td>
+        <td>${fmtFull(row.openBal)}</td>
+        <td>${fmtFull(row.contrib)}</td>
+        <td class="interest-cell">${fmtFull(row.interest)}</td>
+        <td class="total-cell">${fmtFull(row.closeBal)}</td>
+      </tr>`;
+    });
+    document.getElementById('table-body').innerHTML = html;
+
+    document.getElementById('results').classList.add('show');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Auto-calculate on load
+  window.onload = calculate;
+</script>
+</body>
+</html>
