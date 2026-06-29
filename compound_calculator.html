@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compound Interest Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --secondary: #f857a6;
+      --accent: #ff5858;
+      --success: #00c896;
+      --warning: #ffc107;
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card2: #16213e;
+      --text: #e0e0ff;
+      --muted: #8888aa;
+      --border: #2a2a4a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #6c63ff 0%, #f857a6 50%, #ff5858 100%);
+      padding: 2rem 1rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 60%);
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      position: relative;
+    }
+    header p {
+      margin-top: 0.4rem;
+      font-size: 1rem;
+      opacity: 0.88;
+      position: relative;
+    }
+
+    /* LAYOUT */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* CARD */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.6rem;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-title span { font-size: 1.3rem; }
+
+    /* FORM */
+    .field {
+      margin-bottom: 1.1rem;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.4rem;
+    }
+    input, select {
+      width: 100%;
+      background: var(--card2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 0.65rem 0.9rem;
+      transition: border 0.2s;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
+    }
+    select option { background: #1a1a2e; }
+
+    .input-prefix {
+      position: relative;
+    }
+    .input-prefix .prefix {
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1rem;
+      pointer-events: none;
+    }
+    .input-prefix input { padding-left: 2rem; }
+
+    /* CALCULATE BUTTON */
+    .btn-calc {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 0.4rem;
+    }
+    .btn-calc:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-calc:active { transform: translateY(0); }
+
+    /* SUMMARY CARDS */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 600px) {
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+      border-radius: 14px;
+      padding: 1.1rem 1rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      border-radius: 14px;
+    }
+    .stat-card.invested  { background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.35); }
+    .stat-card.interest  { background: rgba(248,87,166,0.15); border: 1px solid rgba(248,87,166,0.35); }
+    .stat-card.total     { background: rgba(0,200,150,0.15);  border: 1px solid rgba(0,200,150,0.35); }
+
+    .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 0.4rem; }
+    .stat-value { font-size: 1.35rem; font-weight: 800; }
+    .stat-card.invested  .stat-value { color: #a09aff; }
+    .stat-card.interest  .stat-value { color: #ff7fd4; }
+    .stat-card.total     .stat-value { color: #00e6ad; }
+    .stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* CHART */
+    .chart-wrap {
+      position: relative;
+      height: 300px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* TABLE */
+    .table-wrap {
+      max-height: 300px;
+      overflow-y: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .table-wrap::-webkit-scrollbar { width: 5px; }
+    .table-wrap::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      padding: 0.65rem 0.8rem;
+      text-align: right;
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    thead th:first-child { text-align: left; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:hover { background: rgba(108,99,255,0.08); }
+    tbody td {
+      padding: 0.55rem 0.8rem;
+      text-align: right;
+      color: var(--muted);
+    }
+    tbody td:first-child { text-align: left; color: var(--text); font-weight: 600; }
+    tbody td.highlight { color: #00e6ad; font-weight: 700; }
+
+    /* PLACEHOLDER */
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 380px;
+      color: var(--muted);
+      gap: 1rem;
+    }
+    .placeholder .icon { font-size: 3.5rem; }
+    .placeholder p { font-size: 0.95rem; }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(108,99,255,0.2);
+      border: 1px solid rgba(108,99,255,0.4);
+      border-radius: 20px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.72rem;
+      color: #a09aff;
+      font-weight: 600;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💹 Compound Interest Calculator</h1>
+  <p>Visualize your wealth growth with regular contributions</p>
+</header>
+
+<div class="container">
+  <div class="grid">
+
+    <!-- INPUT PANEL -->
+    <div class="card">
+      <div class="card-title"><span>⚙️</span> Investment Parameters</div>
+
+      <div class="field">
+        <label>Initial Investment (₹)</label>
+        <div class="input-prefix">
+          <span class="prefix">₹</span>
+          <input type="number" id="principal" value="1000000" min="0" step="1000" placeholder="e.g. 1000000"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contribution Amount (₹)</label>
+        <div class="input-prefix">
+          <span class="prefix">₹</span>
+          <input type="number" id="contribution" value="10000" min="0" step="500" placeholder="e.g. 10000"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contribution Frequency</label>
+        <select id="contribFreq">
+          <option value="12">Monthly</option>
+          <option value="4">Quarterly (every 3 months)</option>
+          <option value="2">Semi-Annually (every 6 months)</option>
+          <option value="1">Annually (Yearly)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Annual Interest Rate (%)</label>
+        <div class="input-prefix">
+          <span class="prefix">%</span>
+          <input type="number" id="rate" value="12" min="0" max="100" step="0.1" placeholder="e.g. 12"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Compounding Frequency</label>
+        <select id="compFreq">
+          <option value="1">Annually</option>
+          <option value="2">Semi-Annually</option>
+          <option value="4" selected>Quarterly</option>
+          <option value="12">Monthly</option>
+          <option value="365">Daily</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Investment Duration (Years)</label>
+        <input type="number" id="years" value="20" min="1" max="50" step="1" placeholder="e.g. 20"/>
+      </div>
+
+      <button class="btn-calc" onclick="calculate()">🚀 Calculate Growth</button>
+    </div>
+
+    <!-- RESULT PANEL -->
+    <div id="resultPanel">
+      <div class="placeholder">
+        <div class="icon">📊</div>
+        <p>Enter your investment details and click <strong>Calculate Growth</strong></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Built for wealth planning · Results are estimates · Consult a financial advisor for investment decisions
+</footer>
+
+<script>
+  let growthChart = null;
+
+  function fmt(n) {
+    if (n >= 1e7) return '₹' + (n / 1e7).toFixed(2) + ' Cr';
+    if (n >= 1e5) return '₹' + (n / 1e5).toFixed(2) + ' L';
+    return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  }
+
+  function fmtFull(n) {
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function calculate() {
+    const P          = parseFloat(document.getElementById('principal').value) || 0;
+    const contrib    = parseFloat(document.getElementById('contribution').value) || 0;
+    const cfreq      = parseInt(document.getElementById('contribFreq').value);   // times/year
+    const r          = parseFloat(document.getElementById('rate').value) / 100;
+    const n          = parseInt(document.getElementById('compFreq').value);      // compounds/year
+    const years      = parseInt(document.getElementById('years').value);
+
+    if (r <= 0 || years <= 0) {
+      alert('Please enter valid interest rate and duration.');
+      return;
+    }
+
+    // Build yearly data
+    const labels = [];
+    const totalValues = [];
+    const investedValues = [];
+    const interestValues = [];
+    const tableRows = [];
+
+    let balance = P;
+    let totalContrib = P;
+
+    // Rate per compounding period
+    const ratePerPeriod = r / n;
+    // Compounding periods per contribution interval
+    const periodsPerContrib = n / cfreq;
+
+    for (let y = 1; y <= years; y++) {
+      // Simulate month by month within a year
+      for (let c = 0; c < cfreq; c++) {
+        // Compound for periodsPerContrib periods
+        for (let p = 0; p < periodsPerContrib; p++) {
+          balance *= (1 + ratePerPeriod);
+        }
+        // Then add contribution
+        balance += contrib;
+        totalContrib += contrib;
+      }
+
+      labels.push('Yr ' + y);
+      totalValues.push(Math.round(balance));
+      investedValues.push(Math.round(totalContrib));
+      interestValues.push(Math.round(balance - totalContrib));
+
+      tableRows.push({
+        year: y,
+        invested: totalContrib,
+        interest: balance - totalContrib,
+        total: balance
+      });
+    }
+
+    const finalTotal    = tableRows[tableRows.length - 1].total;
+    const finalInvested = tableRows[tableRows.length - 1].invested;
+    const finalInterest = finalTotal - finalInvested;
+
+    renderResults(labels, totalValues, investedValues, interestValues, tableRows,
+                  finalTotal, finalInvested, finalInterest);
+  }
+
+  function renderResults(labels, totalValues, investedValues, interestValues, rows,
+                         finalTotal, finalInvested, finalInterest) {
+
+    const multiplier = (finalTotal / finalInvested).toFixed(2);
+
+    document.getElementById('resultPanel').innerHTML = `
+      <div class="summary-grid">
+        <div class="stat-card invested">
+          <div class="stat-label">Total Invested</div>
+          <div class="stat-value">${fmt(finalInvested)}</div>
+          <div class="stat-sub">${fmtFull(finalInvested)}</div>
+        </div>
+        <div class="stat-card interest">
+          <div class="stat-label">Interest Earned</div>
+          <div class="stat-value">${fmt(finalInterest)}</div>
+          <div class="stat-sub">${fmtFull(finalInterest)}</div>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-label">Final Corpus</div>
+          <div class="stat-value">${fmt(finalTotal)}</div>
+          <div class="stat-sub">${multiplier}× your investment</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-title"><span>📈</span> Growth Chart</div>
+        <div class="chart-wrap">
+          <canvas id="growthChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>📋</span> Year-by-Year Breakdown</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Total Invested</th>
+                <th>Interest Earned</th>
+                <th>Corpus Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td>Year ${r.year}</td>
+                  <td>${fmtFull(r.invested)}</td>
+                  <td>${fmtFull(r.interest)}</td>
+                  <td class="highlight">${fmtFull(r.total)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Destroy old chart
+    if (growthChart) { growthChart.destroy(); }
+
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    growthChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Total Corpus',
+            data: totalValues,
+            borderColor: '#00e6ad',
+            backgroundColor: 'rgba(0,230,173,0.10)',
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointRadius: labels.length <= 20 ? 4 : 2,
+            pointBackgroundColor: '#00e6ad',
+          },
+          {
+            label: 'Total Invested',
+            data: investedValues,
+            borderColor: '#a09aff',
+            backgroundColor: 'rgba(108,99,255,0.08)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: labels.length <= 20 ? 3 : 1,
+            pointBackgroundColor: '#a09aff',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            labels: { color: '#e0e0ff', font: { size: 12 } }
+          },
+          tooltip: {
+            backgroundColor: '#1a1a2e',
+            borderColor: '#2a2a4a',
+            borderWidth: 1,
+            titleColor: '#e0e0ff',
+            bodyColor: '#8888aa',
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#8888aa', maxTicksLimit: 15 }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: {
+              color: '#8888aa',
+              callback: v => fmt(v)
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Auto-calculate on load
+  window.onload = calculate;
+</script>
+</body>
+</html>
