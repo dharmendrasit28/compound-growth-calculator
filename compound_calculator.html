@@ -392,20 +392,13 @@
     let balance = P;
     let totalContrib = P;
 
-    // Rate per compounding period
-    const ratePerPeriod = r / n;
-    // Compounding periods per contribution interval
-    const periodsPerContrib = n / cfreq;
+    // Growth factor applied each contribution interval:
+    // (1 + r/n)^(n/cfreq) — correctly handles fractional compounding periods
+    const growthPerInterval = Math.pow(1 + r / n, n / cfreq);
 
     for (let y = 1; y <= years; y++) {
-      // Simulate month by month within a year
       for (let c = 0; c < cfreq; c++) {
-        // Compound for periodsPerContrib periods
-        for (let p = 0; p < periodsPerContrib; p++) {
-          balance *= (1 + ratePerPeriod);
-        }
-        // Then add contribution
-        balance += contrib;
+        balance = balance * growthPerInterval + contrib;
         totalContrib += contrib;
       }
 
